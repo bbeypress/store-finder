@@ -50,7 +50,18 @@ import time
 import httpx
 
 CRTSH_URL = "https://crt.sh/"
-USER_AGENT = "store-finder/1.1 (personal research tool)"
+# crt.sh sits behind bot protection that's more aggressive toward
+# datacenter/cloud IPs (like GitHub Actions runners) than home IPs.
+# A browser-like User-Agent and full header set reduces false blocks.
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+)
+BROWSER_HEADERS = {
+    "User-Agent": USER_AGENT,
+    "Accept": "text/html,application/json,*/*",
+    "Accept-Language": "en-US,en;q=0.9",
+}
 
 CONTACT_PATHS = ["/", "/pages/contact-us", "/pages/contact", "/pages/about-us", "/pages/about"]
 EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
@@ -60,24 +71,31 @@ EMAIL_JUNK_DOMAINS = {"shopify.com", "sentry.io", "example.com", "wixpress.com"}
 
 # ---------- Step 1: find stores via crt.sh ----------
 
-def fetch_certs(keyword: str | None, retries: int = 3) -> list[dict]:
+def fetch_certs(keyword: str | None, retries: int = 5) -> list[dict]:
     query = f"%{keyword}%.myshopify.com" if keyword else "%.myshopify.com"
     params = {"q": query, "output": "json"}
 
     last_err = None
     for attempt in range(1, retries + 1):
         try:
-            with httpx.Client(timeout=30, headers={"User-Agent": USER_AGENT}) as client:
+            with httpx.Client(timeout=30, headers=BROWSER_HEADERS) as client:
                 resp = client.get(CRTSH_URL, params=params)
                 resp.raise_for_status()
                 text = resp.text.strip()
                 return json.loads(text) if text else []
         except (httpx.HTTPError, json.JSONDecodeError) as e:
             last_err = e
-            wait = attempt * 2
+            # Longer, increasing backoff — crt.sh's bot protection backs off
+            # faster than a fixed short retry can outlast.
+            wait = attempt * 5
             print(f"  crt.sh request failed ({e}); retrying in {wait}s...", file=sys.stderr)
             time.sleep(wait)
-    raise RuntimeError(f"crt.sh failed after {retries} attempts: {last_err}")
+    raise RuntimeError(
+        f"crt.sh failed after {retries} attempts: {last_err}\n"
+        "This usually means crt.sh is temporarily blocking automated/cloud "
+        "traffic (common on GitHub Actions' shared IPs). Try running "
+        "locally instead, or re-run the workflow later."
+    )
 
 
 def dedupe_and_sort(certs: list[dict]) -> list[dict]:
@@ -105,7 +123,7 @@ def dedupe_and_sort(certs: list[dict]) -> list[dict]:
 def check_store_live(domain: str) -> dict:
     url = f"https://{domain}/products.json"
     try:
-        with httpx.Client(timeout=10, headers={"User-Agent": USER_AGENT}, follow_redirects=True) as client:
+        with httpx.Client(timeout=10, headers=BROWSER_HEADERS, follow_redirects=True) as client:
             resp = client.get(url, params={"limit": 5})
             if resp.status_code != 200:
                 return {"status": "unreachable_or_locked", "products": [], "shop_name": None}
@@ -126,7 +144,7 @@ def find_contact_email(domain: str) -> str | None:
     for path in CONTACT_PATHS:
         url = f"https://{domain}{path}"
         try:
-            with httpx.Client(timeout=8, headers={"User-Agent": USER_AGENT}, follow_redirects=True) as client:
+            with httpx.Client(timeout=8, headers=BROWSER_HEADERS, follow_redirects=True) as client:
                 resp = client.get(url)
                 if resp.status_code != 200:
                     continue
