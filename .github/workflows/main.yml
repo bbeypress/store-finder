@@ -39,13 +39,13 @@ jobs:
 
       - name: Run store finder
         run: |
-          mkdir -p results
+          mkdir -p docs/results
           DATE=$(date +%Y-%m-%d)
           KEYWORD="${{ github.event.inputs.keyword }}"
           LIMIT="${{ github.event.inputs.limit || '30' }}"
           DRAFT="${{ github.event.inputs.draft_outreach || 'true' }}"
 
-          ARGS="--limit $LIMIT --json results/${DATE}.json"
+          ARGS="--limit $LIMIT --json docs/results/${DATE}.json"
           if [ -n "$KEYWORD" ]; then
             ARGS="$ARGS --keyword $KEYWORD"
           fi
@@ -55,11 +55,14 @@ jobs:
 
           eval "python store_finder.py $ARGS"
 
+          # Copy today's run to a stable filename the live dashboard always fetches
+          cp "docs/results/${DATE}.json" docs/results/latest.json
+
       - name: Commit results back to repo
         run: |
           git config user.name "store-finder-bot"
           git config user.email "actions@github.com"
-          git add results/
+          git add docs/results/
           git diff --cached --quiet || git commit -m "Store finder results: $(date +%Y-%m-%d)"
           git push
 
@@ -67,4 +70,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: store-finder-results-${{ github.run_id }}
-          path: results/
+          path: docs/results/
