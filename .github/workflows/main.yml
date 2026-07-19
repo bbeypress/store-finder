@@ -1,0 +1,70 @@
+name: Find New Shopify Stores
+
+on:
+  schedule:
+    # Runs every day at 09:00 UTC. Adjust the cron to your preferred time —
+    # cron times are always UTC regardless of your local timezone.
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+    # Lets you trigger a run manually from the Actions tab, with your own
+    # inputs, instead of waiting for the schedule.
+    inputs:
+      keyword:
+        description: "Keyword to filter store subdomains (leave blank for all)"
+        required: false
+        default: ""
+      limit:
+        description: "Max number of stores to find"
+        required: false
+        default: "30"
+      draft_outreach:
+        description: "Also find contacts and draft outreach notes"
+        required: false
+        default: "true"
+
+jobs:
+  find-stores:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run store finder
+        run: |
+          mkdir -p results
+          DATE=$(date +%Y-%m-%d)
+          KEYWORD="${{ github.event.inputs.keyword }}"
+          LIMIT="${{ github.event.inputs.limit || '30' }}"
+          DRAFT="${{ github.event.inputs.draft_outreach || 'true' }}"
+
+          ARGS="--limit $LIMIT --json results/${DATE}.json"
+          if [ -n "$KEYWORD" ]; then
+            ARGS="$ARGS --keyword $KEYWORD"
+          fi
+          if [ "$DRAFT" = "true" ]; then
+            ARGS="$ARGS --draft-outreach --your-name \"${{ vars.YOUR_NAME || 'Alex' }}\" --your-offer \"${{ vars.YOUR_OFFER || 'a tool that helps small store owners' }}\""
+          fi
+
+          eval "python store_finder.py $ARGS"
+
+      - name: Commit results back to repo
+        run: |
+          git config user.name "store-finder-bot"
+          git config user.email "actions@github.com"
+          git add results/
+          git diff --cached --quiet || git commit -m "Store finder results: $(date +%Y-%m-%d)"
+          git push
+
+      - name: Upload results as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: store-finder-results-${{ github.run_id }}
+          path: results/
