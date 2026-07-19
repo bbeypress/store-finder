@@ -204,7 +204,8 @@ def main():
         args.verify_live = True
         args.find_contact = True
 
-    print(f"Querying crt.sh for {'stores matching \"' + args.keyword + '\"' if args.keyword else 'all recent stores'}...")
+    search_desc = f'stores matching "{args.keyword}"' if args.keyword else "all recent stores"
+    print(f"Querying crt.sh for {search_desc}...")
     raw_certs = fetch_certs(args.keyword)
     print(f"  Found {len(raw_certs)} certificate log entries.")
 
