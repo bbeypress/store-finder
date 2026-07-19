@@ -1,3 +1,4 @@
+[README (1).md](https://github.com/user-attachments/files/30160685/README.1.md)
 # Store Finder
 
 Finds newly-created Shopify stores using public data only (certificate
@@ -49,6 +50,21 @@ This repo includes `.github/workflows/find-stores.yml`, which:
 
 ### Adjusting the schedule
 Edit the `cron` line in `.github/workflows/find-stores.yml`. Cron times are always UTC. For example, `"0 14 * * *"` runs daily at 14:00 UTC.
+
+## Live dashboard (GitHub Pages)
+This repo includes `docs/index.html` — a live webpage showing the latest
+run's results, styled as cards with domain, products, and contact info.
+GitHub Actions writes each run's results into `docs/results/`, and the
+page always displays `docs/results/latest.json`.
+
+### One-time setup to make it live
+1. Go to your repo → **Settings** → **Pages**.
+2. Under "Build and deployment" → **Source**, select **Deploy from a branch**.
+3. Under **Branch**, select `main` and `/docs` as the folder, then **Save**.
+4. GitHub will give you a live URL, typically `https://<your-username>.github.io/<repo-name>/` — it takes a minute or two to go live the first time.
+5. Run the workflow at least once (Actions tab → Run workflow) so `docs/results/latest.json` exists — until then the page shows a friendly "no results yet" message instead of erroring.
+
+Every time the workflow runs (daily, or manually), the live page updates automatically with the newest results — no rebuild step needed.
 
 ## A note on outreach
 The contact emails this finds are ones store owners chose to display
