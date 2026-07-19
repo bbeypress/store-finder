@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Store Finder — Live Results</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #171a21;
+    --border: #2a2e38;
+    --text: #e8e9ec;
+    --muted: #9298a5;
+    --accent: #5b8cff;
+    --send: #3fbf7f;
+    --hold: #e0a940;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    padding: 40px 24px 24px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 28px; margin: 0 0 8px; }
+  .sub { color: var(--muted); font-size: 14px; }
+  main { max-width: 960px; margin: 0 auto; padding: 0 24px 60px; }
+  #status { color: var(--muted); font-size: 14px; margin-bottom: 20px; }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  @media (min-width: 700px) { .grid { grid-template-columns: 1fr 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+  }
+  .card a.domain {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+    word-break: break-all;
+  }
+  .card a.domain:hover { text-decoration: underline; }
+  .meta { color: var(--muted); font-size: 12px; margin-top: 6px; }
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-top: 10px;
+    font-weight: 600;
+  }
+  .badge.live { background: rgba(63,191,127,0.15); color: var(--send); }
+  .badge.unknown { background: rgba(224,169,64,0.15); color: var(--hold); }
+  .products { margin-top: 10px; font-size: 13px; color: var(--text); }
+  .contact { margin-top: 10px; font-size: 13px; }
+  .contact a { color: var(--accent); }
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty code {
+    background: var(--card);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>🔎 Store Finder — Live Results</h1>
+  <p class="sub">Newly-created Shopify stores, found automatically via public certificate transparency logs.</p>
+</header>
+<main>
+  <div id="status">Loading latest results…</div>
+  <div id="grid" class="grid"></div>
+</main>
+
+<script>
+async function loadResults() {
+  const statusEl = document.getElementById("status");
+  const gridEl = document.getElementById("grid");
+
+  try {
+    // Cache-bust so GitHub Pages' CDN doesn't serve a stale file
+    const res = await fetch("results/latest.json?t=" + Date.now());
+    if (!res.ok) throw new Error("No results file found yet");
+    const data = await res.json();
+
+    if (!Array.isArray(data) || data.length === 0) {
+      statusEl.textContent = "";
+      gridEl.innerHTML = `<div class="empty">No results yet. Once the GitHub Action runs, results will appear here automatically.<br><br>Trigger it manually from the <strong>Actions</strong> tab if you don't want to wait for the daily schedule.</div>`;
+      return;
+    }
+
+    statusEl.textContent = `${data.length} store${data.length === 1 ? "" : "s"} found in the latest run.`;
+
+    gridEl.innerHTML = data.map(store => {
+      const isLive = store.status === "live";
+      const products = (store.products || []).slice(0, 3).join(", ");
+      const contact = store.contact_email
+        ? `<div class="contact">✉️ <a href="mailto:${store.contact_email}">${store.contact_email}</a></div>`
+        : "";
+      return `
+        <div class="card">
+          <a class="domain" href="${store.url}" target="_blank" rel="noopener">${store.domain}</a>
+          <div class="meta">Certificate issued: ${store.cert_issued || "unknown"}</div>
+          <span class="badge ${isLive ? "live" : "unknown"}">${isLive ? "Live store" : "Unverified"}</span>
+          ${products ? `<div class="products">Sells: ${products}</div>` : ""}
+          ${contact}
+        </div>
+      `;
+    }).join("");
+  } catch (err) {
+    statusEl.textContent = "";
+    gridEl.innerHTML = `<div class="empty">No results file found yet at <code>results/latest.json</code>.<br><br>Run the GitHub Action at least once (Actions tab → Find New Shopify Stores → Run workflow) to populate this page.</div>`;
+  }
+}
+loadResults();
+</script>
+</body>
+</html>
