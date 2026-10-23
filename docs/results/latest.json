@@ -75,10 +75,17 @@
     "domain": "automatic-flies.myshopify.com",
     "url": "https://automatic-flies.myshopify.com",
     "cert_issued": "2017-09-01T22:08:00",
-    "status": "unreachable_or_locked",
-    "products": [],
-    "shop_name": null,
-    "contact_email": null
+    "status": "live",
+    "products": [
+      "Deep Seven Holo Ebi",
+      "2025 AF CHRISTMAS FLIES",
+      "Deano's Dirty Dozen O'io Flies",
+      "AHI CHUNKS",
+      "Sayori V2"
+    ],
+    "shop_name": "Automatic Flies",
+    "contact_email": "IMG_0588_edec06af-ad00-4772-941b-8902701b2231_500x@2x.png",
+    "outreach_draft": "Subject: Quick note for Automatic Flies\n\nHi there,\n\nI came across your store, Automatic Flies, and wanted to reach out directly rather than send anything automated-sounding. I noticed you're selling things like Deep Seven Holo Ebi, 2025 AF CHRISTMAS FLIES.\n\nI'm Alex, and I built a tool that helps small store owners. Thought it might be useful as you grow the store \u2014 no pressure either way, just wanted to put it on your radar.\n\nHappy to answer any questions, or feel free to ignore this if it's not useful to you right now \u2014 either way, best of luck with the store!\n\n\u2014 Alex\n\n(If you'd rather not hear from me again, just reply and let me know.)"
   },
   {
     "domain": "bright-attire.myshopify.com",
@@ -177,7 +184,8 @@
     "status": "unreachable_or_locked",
     "products": [],
     "shop_name": null,
-    "contact_email": null
+    "contact_email": "contact@skyler.hk",
+    "outreach_draft": "Subject: Quick note for Skylersleep\n\nHi there,\n\nI came across your store, Skylersleep, and wanted to reach out directly rather than send anything automated-sounding.\n\nI'm Alex, and I built a tool that helps small store owners. Thought it might be useful as you grow the store \u2014 no pressure either way, just wanted to put it on your radar.\n\nHappy to answer any questions, or feel free to ignore this if it's not useful to you right now \u2014 either way, best of luck with the store!\n\n\u2014 Alex\n\n(If you'd rather not hear from me again, just reply and let me know.)"
   },
   {
     "domain": "wads4u.myshopify.com",
